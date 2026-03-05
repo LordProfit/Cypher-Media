@@ -1,3 +1,4 @@
+import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
@@ -28,12 +29,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} ${jetbrainsMono.variable} ${playfair.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${inter.variable} ${jetbrainsMono.variable} ${playfair.variable} antialiased`}
+        >
+          <SignedOut>
+            <div className="flex min-h-screen items-center justify-center bg-neutral-50">
+              <div className="text-center">
+                <h1 className="text-4xl font-bold text-neutral-900">Canon</h1>
+                <p className="mt-2 text-neutral-600">Systems Over Willpower</p>
+                <div className="mt-6">
+                  <SignInButton className="rounded bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-neutral-800" />
+                </div>
+              </div>
+            </div>
+          </SignedOut>
+          <SignedIn>
+            {children}
+          </SignedIn>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
