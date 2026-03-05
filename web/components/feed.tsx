@@ -1,88 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { CanonPost, CategoryTag, InteractionType } from '@/types';
+import { useFeed, useInteract, useStreaks } from '@/hooks/use-feed';
+import { CategoryTag, InteractionType } from '@/types';
 import { PostCard } from './post-card';
 import { CategoryFilter } from './category-filter';
 import { StreakIndicator } from './streak-indicator';
-
-// Mock data for development
-const MOCK_POSTS: CanonPost[] = [
-  {
-    id: '1',
-    slug: 'motivation-system-failure',
-    quote: {
-      text: "The strongest systems don't need consent. They make compliance the only logical path.",
-      attribution: 'Profit',
-      source: {
-        title: 'Canon: Systems Over Willpower',
-        author: 'Arturious Castillo',
-        type: 'profit-original',
-      },
-    },
-    talk: {
-      text: "You don't need more discipline. You need a system that makes the wrong choice harder than the right one. Motivation is a feeling. Systems are architecture.",
-      tone: 'brutal',
-    },
-    usage: {
-      action: 'Identify one habit you struggle with. Add 20 seconds of friction to the wrong choice.',
-      context: 'Morning routine, phone usage, diet — wherever you break promises to yourself.',
-      timeMinutes: 5,
-    },
-    type: 'quote-talk-usage',
-    category: ['systems', 'habits', 'discipline'],
-    difficulty: 'easy',
-    engagement: {
-      likes: 1247,
-      saves: 892,
-      shares: 334,
-      reflections: 156,
-      completions: 2089,
-    },
-    reflectionPrompt: 'What system failed you today? Not your willpower — the system.',
-    createdAt: '2026-03-05T00:00:00Z',
-    updatedAt: '2026-03-05T00:00:00Z',
-    publishedAt: '2026-03-05T00:00:00Z',
-    isActive: true,
-  },
-  {
-    id: '2',
-    slug: 'discipline-myth',
-    quote: {
-      text: 'Discipline is a myth. What you call discipline, I call a system with no exit.',
-      attribution: 'Profit',
-      source: {
-        title: 'Canon: Systems Over Willpower',
-        author: 'Arturious Castillo',
-        type: 'profit-original',
-      },
-    },
-    talk: {
-      text: "You don't need more willpower. You need fewer choices. The most disciplined people don't resist temptation — they engineer it out of existence.",
-      tone: 'brutal',
-    },
-    usage: {
-      action: 'Remove one temptation from your environment today.',
-      context: 'Your phone, junk food, distractions — make the wrong choice physically harder.',
-      timeMinutes: 10,
-    },
-    type: 'quote-talk-usage',
-    category: ['discipline', 'systems', 'habits'],
-    difficulty: 'easy',
-    engagement: {
-      likes: 892,
-      saves: 1203,
-      shares: 445,
-      reflections: 234,
-      completions: 1567,
-    },
-    reflectionPrompt: 'What are you still trying to white-knuckle through?',
-    createdAt: '2026-03-04T00:00:00Z',
-    updatedAt: '2026-03-04T00:00:00Z',
-    publishedAt: '2026-03-04T00:00:00Z',
-    isActive: true,
-  },
-];
+import { Flame, Loader2 } from 'lucide-react';
 
 const ALL_CATEGORIES: CategoryTag[] = [
   'power',
@@ -99,7 +23,9 @@ const ALL_CATEGORIES: CategoryTag[] = [
 
 export function Feed() {
   const [selectedCategories, setSelectedCategories] = useState<CategoryTag[]>([]);
-  const [completedPosts, setCompletedPosts] = useState<Set<string>>(new Set());
+  const { data: feed, isLoading, error } = useFeed();
+  const { data: streaks } = useStreaks();
+  const interact = useInteract();
 
   const toggleCategory = (category: CategoryTag) => {
     setSelectedCategories((prev) =>
@@ -110,18 +36,33 @@ export function Feed() {
   };
 
   const handleInteract = (postId: string, type: InteractionType) => {
-    if (type === 'complete') {
-      setCompletedPosts((prev) => new Set([...prev, postId]));
-    }
-    console.log(`Post ${postId}: ${type}`);
+    interact.mutate({ postId, type });
   };
 
+  // Filter posts by selected categories
+  const posts = feed?.posts || [];
   const filteredPosts =
     selectedCategories.length === 0
-      ? MOCK_POSTS
-      : MOCK_POSTS.filter((post) =>
+      ? posts
+      : posts.filter((post) =>
           post.category.some((c) => selectedCategories.includes(c))
         );
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+        Failed to load feed. Please try again.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -129,10 +70,38 @@ export function Feed() {
       <div className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4">
         <div>
           <h2 className="text-sm font-medium text-neutral-500">Current Streak</h2>
-          <p className="text-2xl font-bold text-neutral-900">12 days</p>
+          <p className="text-2xl font-bold text-neutral-900">
+            {streaks?.overall?.current || 0} days
+          </p>
         </div>
-        <StreakIndicator streak={12} />
+        <div className="flex items-center gap-4">
+          {streaks?.categories?.slice(0, 3).map((streak: any) => (
+            <StreakIndicator
+              key={streak.category}
+              streak={streak.current_streak}
+              category={streak.category}
+              isAtRisk={
+                streak.last_completed_at &&
+                new Date(streak.last_completed_at).toDateString() !==
+                  new Date().toDateString()
+              }
+            />
+          ))}
+        </div>
       </div>
+
+      {/* Daily Prompt */}
+      {feed?.dailyPrompt && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <Flame className="h-5 w-5 text-amber-600" />
+            <div>
+              <p className="text-sm font-medium text-amber-900">Daily Reflection</p>
+              <p className="text-sm text-amber-800">{feed.dailyPrompt.prompt}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Category Filter */}
       <CategoryFilter
@@ -143,14 +112,22 @@ export function Feed() {
 
       {/* Posts */}
       <div className="space-y-4">
-        {filteredPosts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            isCompleted={completedPosts.has(post.id)}
-            onInteract={(type) => handleInteract(post.id, type)}
-          />
-        ))}
+        {filteredPosts.length === 0 ? (
+          <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center text-neutral-500">
+            No posts found for selected categories.
+          </div>
+        ) : (
+          filteredPosts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              isCompleted={feed?.streakStatus?.completed?.includes(
+                post.category[0]
+              )}
+              onInteract={(type) => handleInteract(post.id, type)}
+            />
+          ))
+        )}
       </div>
     </div>
   );
