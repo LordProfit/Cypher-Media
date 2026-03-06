@@ -11,7 +11,7 @@ interface CategoryFilterProps {
 
 export function CategoryFilter({ categories, selected, onToggle }: CategoryFilterProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 py-2">
       {categories.map((category) => {
         const isSelected = selected.includes(category);
         return (
@@ -21,8 +21,8 @@ export function CategoryFilter({ categories, selected, onToggle }: CategoryFilte
             className={cn(
               "rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-all",
               isSelected
-                ? "bg-neutral-900 text-white"
-                : "bg-white border border-neutral-200 text-neutral-600 hover:border-neutral-400"
+                ? "bg-neutral-900 text-white shadow-sm"
+                : "bg-white border border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
             )}
           >
             {category}
