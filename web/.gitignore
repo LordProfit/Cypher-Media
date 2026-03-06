@@ -7,10 +7,10 @@
 .env.production.local
 .env
 
-/node_modules
-/.next
-/out
-/.git
+node_modules
+.next
+out
+.git
 .DS_Store   
 
 ..
