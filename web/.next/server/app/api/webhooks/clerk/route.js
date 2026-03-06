@@ -1,10 +1,9 @@
 var R=require("../../../../chunks/[turbopack]_runtime.js")("server/app/api/webhooks/clerk/route.js")
 R.c("server/chunks/[root-of-the-server]__906aa7bc._.js")
-R.c("server/chunks/715b0__pnpm_74923c7c._.js")
-R.c("server/chunks/de725_next_5aceaea7._.js")
-R.c("server/chunks/Documents_Builds_Cypher-Media_web_lib_db_supabase_ts_b894e7da._.js")
-R.c("server/chunks/[root-of-the-server]__ee7f6ef6._.js")
-R.c("server/chunks/de725_next_dist_98a0f579._.js")
-R.c("server/chunks/fa3eb_web__next-internal_server_app_api_webhooks_clerk_route_actions_9791d333.js")
-R.m(83417)
-module.exports=R.m(83417).exports
+R.c("server/chunks/node_modules_next_92aaecbe._.js")
+R.c("server/chunks/node_modules_7c22dcee._.js")
+R.c("server/chunks/[root-of-the-server]__b6fb619b._.js")
+R.c("server/chunks/node_modules_next_dist_23bfe24c._.js")
+R.c("server/chunks/_next-internal_server_app_api_webhooks_clerk_route_actions_c6b9d221.js")
+R.m(21043)
+module.exports=R.m(21043).exports

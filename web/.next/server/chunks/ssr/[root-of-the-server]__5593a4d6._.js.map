@@ -1,1 +1,0 @@
-{"version":3,"sources":["turbopack:///[project]/Documents/Builds/Cypher-Media/web/app/sign-in/[[...sign-in]]/page.tsx"],"sourcesContent":["import { SignIn } from '@clerk/nextjs'\n\nexport default function Page() {\n  return <SignIn />\n}"],"names":[],"mappings":"oVAAA,EAAA,EAAA,CAAA,CAAA,OAEe,SAAS,IACtB,MAAO,CAAA,EAAA,EAAA,GAAA,EAAC,EAAA,MAAM,CAAA,CAAA,EAChB"}

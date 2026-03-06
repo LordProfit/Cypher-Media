@@ -208,6 +208,26 @@ CREATE TABLE daily_feeds (
 CREATE INDEX idx_daily_feeds_user_date ON daily_feeds(user_id, date);
 
 -- ============================================================================
+-- POST EMBEDDINGS TABLE (for AI recommendations)
+-- ============================================================================
+
+CREATE TABLE post_embeddings (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  embedding VECTOR(1536) NOT NULL,
+  content_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  
+  UNIQUE(post_id)
+);
+
+CREATE INDEX idx_post_embeddings_post_id ON post_embeddings(post_id);
+
+-- Enable pgvector extension (run this first)
+-- CREATE EXTENSION IF NOT EXISTS vector;
+
+-- ============================================================================
 -- FUNCTIONS & TRIGGERS
 -- ============================================================================
 
