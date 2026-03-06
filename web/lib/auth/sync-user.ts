@@ -1,5 +1,5 @@
 import { clerkClient } from '@clerk/nextjs/server';
-import { createServerClient } from './supabase';
+import { createServerClient } from '@/lib/db/supabase';
 
 export async function syncUserToDatabase(clerkUserId: string) {
   const clerk = await clerkClient();
@@ -22,7 +22,7 @@ export async function syncUserToDatabase(clerkUserId: string) {
       longest_streak: 0,
       total_reflections: 0,
       total_completions: 0,
-    }, {
+    } as any, {
       onConflict: 'clerk_id'
     })
     .select()

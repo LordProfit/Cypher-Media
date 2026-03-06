@@ -23,28 +23,30 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     
+    const userIdFromDb = (user as any).id;
+    
     // Get user's streaks
     const { data: streaks } = await supabase
       .from('category_streaks')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', userIdFromDb);
     
     // Get user's overall stats
     const { data: userStats } = await supabase
       .from('users')
       .select('current_streak, longest_streak, total_completions, total_reflections')
-      .eq('id', user.id)
+      .eq('id', userIdFromDb)
       .single();
     
     return NextResponse.json({
       overall: {
-        current: userStats?.current_streak || 0,
-        longest: userStats?.longest_streak || 0,
+        current: (userStats as any)?.current_streak || 0,
+        longest: (userStats as any)?.longest_streak || 0,
       },
       categories: streaks || [],
       stats: {
-        totalCompletions: userStats?.total_completions || 0,
-        totalReflections: userStats?.total_reflections || 0,
+        totalCompletions: (userStats as any)?.total_completions || 0,
+        totalReflections: (userStats as any)?.total_reflections || 0,
       }
     });
   } catch (error) {

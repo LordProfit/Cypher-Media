@@ -4,10 +4,11 @@ import { createServerClient } from '@/lib/db/supabase';
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const { userId } = await auth();
+    const { slug } = await params;
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -18,7 +19,7 @@ export async function GET(
     const { data: post, error } = await supabase
       .from('posts')
       .select('*')
-      .eq('slug', params.slug)
+      .eq('slug', slug)
       .eq('is_active', true)
       .single();
     
@@ -30,12 +31,12 @@ export async function GET(
     const { data: interactions } = await supabase
       .from('interactions')
       .select('type')
-      .eq('post_id', post.id)
+      .eq('post_id', (post as any).id)
       .eq('user_id', userId);
     
     return NextResponse.json({
-      ...post,
-      userInteractions: interactions?.map((i) => i.type) || [],
+      ...(post as any),
+      userInteractions: interactions?.map((i: any) => i.type) || [],
     });
   } catch (error) {
     console.error('Post fetch error:', error);

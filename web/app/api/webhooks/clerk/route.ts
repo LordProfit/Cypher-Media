@@ -55,7 +55,7 @@ export async function POST(req: Request) {
         username: username,
         display_name: `${first_name || ''} ${last_name || ''}`.trim() || username,
         avatar_url: image_url,
-      }, {
+      } as any, {
         onConflict: 'clerk_id'
       });
     
@@ -67,6 +67,10 @@ export async function POST(req: Request) {
   
   if (eventType === 'user.deleted') {
     const { id } = evt.data;
+    
+    if (!id) {
+      return NextResponse.json({ error: 'No user ID provided' }, { status: 400 });
+    }
     
     const { error } = await supabase
       .from('users')

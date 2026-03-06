@@ -42,7 +42,11 @@ export default function RootLayout({
                   <h1 className="text-4xl font-bold text-neutral-900">Canon</h1>
                   <p className="mt-2 text-neutral-600">Systems Over Willpower</p>
                   <div className="mt-6">
-                    <SignInButton className="rounded bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-neutral-800" />
+                    <SignInButton>
+                      <button className="rounded bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-neutral-800">
+                        Sign In
+                      </button>
+                    </SignInButton>
                   </div>
                 </div>
               </div>

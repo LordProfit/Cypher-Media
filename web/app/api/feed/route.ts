@@ -24,13 +24,14 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    const userId = (user as any).id;
     const today = new Date().toISOString().split('T')[0];
 
     // Check for existing feed
     const { data: existingFeed } = await supabase
       .from('daily_feeds')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('date', today)
       .single();
 
@@ -39,10 +40,10 @@ export async function GET() {
       const { data: posts } = await supabase
         .from('posts')
         .select('*')
-        .in('id', existingFeed.post_ids)
+        .in('id', (existingFeed as any).post_ids || [])
         .eq('is_active', true);
 
-      return NextResponse.json({ feed: { ...existingFeed, posts } });
+      return NextResponse.json({ feed: { ...(existingFeed as any), posts } });
     }
 
     // Generate new feed
@@ -56,20 +57,20 @@ export async function GET() {
     const postIds = posts?.map((p: any) => p.id) || [];
 
     const { data: feed, error: feedError } = await supabase
-  .from('daily_feeds')
-  .insert({
-    user_id: user.id,
-    date: today,
-    post_ids: postIds,
-    completed_post_ids: [],
-    streak_status: { overall: 0, atRisk: [], completed: [] }
-  } as any)
-  .select()
-  .single();
+      .from('daily_feeds')
+      .insert({
+        user_id: userId,
+        date: today,
+        post_ids: postIds,
+        completed_post_ids: [],
+        streak_status: { overall: 0, atRisk: [], completed: [] }
+      } as any)
+      .select()
+      .single();
 
-if (feedError) throw feedError;
+    if (feedError) throw feedError;
 
-return NextResponse.json({ feed: { ...(feed as any), posts } });
+    return NextResponse.json({ feed: { ...(feed as any), posts } });
 
   } catch (error) {
     console.error('Feed error:', error);
