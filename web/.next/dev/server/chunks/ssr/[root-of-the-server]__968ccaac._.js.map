@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 28, "column": 0}, "map": {"version":3,"sources":["file:///Users/mac/Documents/Builds/Cypher-Media/web/components/providers.tsx"],"sourcesContent":["'use client';\n\nimport { QueryClient, QueryClientProvider } from '@tanstack/react-query';\nimport { ReactNode, useState } from 'react';\n\nexport function Providers({ children }: { children: ReactNode }) {\n  const [queryClient] = useState(\n    () =>\n      new QueryClient({\n        defaultOptions: {\n          queries: {\n            staleTime: 60 * 1000, // 1 minute\n            refetchOnWindowFocus: false,\n          },\n        },\n      })\n  );\n\n  return (\n    <QueryClientProvider client={queryClient}>\n      {children}\n    </QueryClientProvider>\n  );\n}"],"names":[],"mappings":";;;;;AAEA;AAAA;AACA;AAHA;;;;AAKO,SAAS,UAAU,EAAE,QAAQ,EAA2B;IAC7D,MAAM,CAAC,YAAY,GAAG,IAAA,maAAQ,EAC5B,IACE,IAAI,uTAAW,CAAC;YACd,gBAAgB;gBACd,SAAS;oBACP,WAAW,KAAK;oBAChB,sBAAsB;gBACxB;YACF;QACF;IAGJ,qBACE,gcAAC,+VAAmB;QAAC,QAAQ;kBAC1B;;;;;;AAGP","debugId":null}}]
+}

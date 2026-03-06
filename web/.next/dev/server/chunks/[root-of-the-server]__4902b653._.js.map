@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 58, "column": 0}, "map": {"version":3,"sources":["file:///Users/mac/Documents/Builds/Cypher-Media/web/proxy.ts"],"sourcesContent":["import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'\n\nconst isPublicRoute = createRouteMatcher([\n  '/sign-in(.*)',\n  '/sign-up(.*)',\n  '/api/webhooks(.*)',\n])\n\nexport default clerkMiddleware(async (auth, req) => {\n  if (!isPublicRoute(req)) {\n    const { userId } = await auth();\n    if (!userId) {\n      await auth.protect()\n    }\n  }\n})\n\nexport const config = {\n  matcher: [\n    '/((?!_next|[^?]*\\\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',\n    '/(api|trpc)(.*)',\n  ],\n}"],"names":[],"mappings":";;;;;;AAAA;AAAA;;AAEA,MAAM,gBAAgB,IAAA,ocAAkB,EAAC;IACvC;IACA;IACA;CACD;uCAEc,IAAA,ocAAe,EAAC,OAAO,MAAM;IAC1C,IAAI,CAAC,cAAc,MAAM;QACvB,MAAM,EAAE,MAAM,EAAE,GAAG,MAAM;QACzB,IAAI,CAAC,QAAQ;YACX,MAAM,KAAK,OAAO;QACpB;IACF;AACF;AAEO,MAAM,SAAS;IACpB,SAAS;QACP;QACA;KACD;AACH","debugId":null}}]
+}

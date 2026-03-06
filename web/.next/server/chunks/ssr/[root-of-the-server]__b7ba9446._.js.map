@@ -1,0 +1,1 @@
+{"version":3,"sources":["turbopack:///[project]/Documents/Builds/Cypher-Media/web/app/sign-up/[[...sign-up]]/page.tsx"],"sourcesContent":["import { SignUp } from '@clerk/nextjs'\n\nexport default function Page() {\n  return <SignUp />\n}"],"names":[],"mappings":"oVAAA,EAAA,EAAA,CAAA,CAAA,OAEe,SAAS,IACtB,MAAO,CAAA,EAAA,EAAA,GAAA,EAAC,EAAA,MAAM,CAAA,CAAA,EAChB"}

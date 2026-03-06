@@ -1,98 +1,78 @@
+
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/db/supabase';
 
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const { userId: clerkId } = await auth();
     
-    if (!userId) {
+    if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     const supabase = createServerClient();
-    
-    // Get today's feed for user
+
+    // Get Supabase user ID from Clerk ID
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, preferred_categories, difficulty_preference')
+      .eq('clerk_id', clerkId)
+      .single();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     const today = new Date().toISOString().split('T')[0];
-    
-    const { data: feed, error } = await supabase
+
+    // Check for existing feed
+    const { data: existingFeed } = await supabase
       .from('daily_feeds')
-      .select(`
-        *,
-        posts:post_ids(
-          *,
-          quote:quote_text,
-          quote_attribution,
-          source_title,
-          source_author,
-          talk:talk_text,
-          talk_tone,
-          usage:usage_action,
-          usage_context,
-          usage_time_minutes,
-          categories,
-          difficulty,
-          reflection_prompt
-        )
-      `)
-      .eq('user_id', userId)
+      .select('*')
+      .eq('user_id', user.id)
       .eq('date', today)
       .single();
-    
-    if (error || !feed) {
-      // Generate new feed if none exists
-      return generateAndReturnFeed(userId, supabase);
+
+    if (existingFeed) {
+      // Fetch the actual posts
+      const { data: posts } = await supabase
+        .from('posts')
+        .select('*')
+        .in('id', existingFeed.post_ids)
+        .eq('is_active', true);
+
+      return NextResponse.json({ feed: { ...existingFeed, posts } });
     }
-    
-    return NextResponse.json({ feed });
+
+    // Generate new feed
+    const { data: posts } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('is_active', true)
+      .order('published_at', { ascending: false })
+      .limit(5);
+
+    const postIds = posts?.map((p: any) => p.id) || [];
+
+    const { data: feed, error: feedError } = await supabase
+  .from('daily_feeds')
+  .insert({
+    user_id: user.id,
+    date: today,
+    post_ids: postIds,
+    completed_post_ids: [],
+    streak_status: { overall: 0, atRisk: [], completed: [] }
+  } as any)
+  .select()
+  .single();
+
+if (feedError) throw feedError;
+
+return NextResponse.json({ feed: { ...(feed as any), posts } });
+
   } catch (error) {
     console.error('Feed error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch feed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch feed' }, { status: 500 });
   }
-}
-
-async function generateAndReturnFeed(userId: string, supabase: any) {
-  // Get user's preferences
-  const { data: user } = await supabase
-    .from('users')
-    .select('preferred_categories, difficulty_preference')
-    .eq('clerk_id', userId)
-    .single();
-  
-  // Get posts matching preferences
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('*')
-    .eq('is_active', true)
-    .order('published_at', { ascending: false })
-    .limit(5);
-  
-  // Create daily feed record
-  const today = new Date().toISOString().split('T')[0];
-  const postIds = posts?.map((p: any) => p.id) || [];
-  
-  const { data: feed, error } = await supabase
-    .from('daily_feeds')
-    .insert({
-      user_id: userId,
-      date: today,
-      post_ids: postIds,
-      completed_post_ids: [],
-      streak_status: {
-        overall: 0,
-        atRisk: [],
-        completed: []
-      }
-    })
-    .select()
-    .single();
-  
-  if (error) {
-    throw error;
-  }
-  
-  return NextResponse.json({ feed: { ...feed, posts } });
 }
