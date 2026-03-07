@@ -1,14 +1,28 @@
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-let openai: OpenAI | null = null;
+let genAI: GoogleGenerativeAI | null = null;
+let embeddingModel: any = null;
+let chatModel: any = null;
 
-function getOpenAI(): OpenAI {
-  if (!openai) {
-    openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+function getGenAI(): GoogleGenerativeAI {
+  if (!genAI) {
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
   }
-  return openai;
+  return genAI;
+}
+
+function getEmbeddingModel() {
+  if (!embeddingModel) {
+    embeddingModel = getGenAI().getGenerativeModel({ model: 'gemini-embedding-001' });
+  }
+  return embeddingModel;
+}
+
+function getChatModel() {
+  if (!chatModel) {
+    chatModel = getGenAI().getGenerativeModel({ model: 'gemini-2.5-flash-preview-01-06' });
+  }
+  return chatModel;
 }
 
 export interface EmbeddingResult {
@@ -17,32 +31,24 @@ export interface EmbeddingResult {
 }
 
 /**
- * Generate embeddings for text using OpenAI's text-embedding-3-small model
+ * Generate embeddings for text using Gemini embedding-001
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
-  const response = await getOpenAI().embeddings.create({
-    model: 'text-embedding-3-small',
-    input: text,
-    dimensions: 1536,
-  });
-
-  return response.data[0].embedding;
+  const result = await getEmbeddingModel().embedContent(text);
+  return result.embedding.values;
 }
 
 /**
  * Generate embeddings for multiple texts in batch
  */
 export async function generateEmbeddings(texts: string[]): Promise<EmbeddingResult[]> {
-  const response = await getOpenAI().embeddings.create({
-    model: 'text-embedding-3-small',
-    input: texts,
-    dimensions: 1536,
-  });
-
-  return response.data.map((item, index) => ({
-    embedding: item.embedding,
-    text: texts[index],
-  }));
+  const results = await Promise.all(
+    texts.map(async (text) => {
+      const embedding = await generateEmbedding(text);
+      return { embedding, text };
+    })
+  );
+  return results;
 }
 
 /**
@@ -82,7 +88,7 @@ export function findSimilar(
 }
 
 /**
- * Generate a personalized recommendation reason using GPT
+ * Generate a personalized recommendation reason using Gemini 2.5 Flash
  */
 export async function generateRecommendationReason(
   userContext: {
@@ -113,14 +119,12 @@ Generate a ONE SENTENCE personalized reason why this content matters for this us
 Example good reasons:
 - "You've been avoiding the hard conversations—this is your framework."
 - "Your execution streak is strong but your systems thinking is weak."
-- "This bridges your discipline practice with real-world power dynamics."`;
+- "This bridges your discipline practice with real-world power dynamics."
 
-  const response = await getOpenAI().chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.7,
-    max_tokens: 100,
-  });
+Respond with only the one sentence, nothing else.`;
 
-  return response.choices[0].message.content?.trim() || 'Recommended based on your focus areas.';
+  const result = await getChatModel().generateContent(prompt);
+  const text = result.response.text().trim();
+  
+  return text || 'Recommended based on your focus areas.';
 }

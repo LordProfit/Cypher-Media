@@ -3,11 +3,78 @@
  * Run: npx tsx scripts/generate-embeddings.ts
  */
 
-import { createServerClient } from '../lib/db/supabase';
-import { embedPost } from '../lib/ai/recommendations';
+import { createClient } from '@supabase/supabase-js';
+import { generateEmbedding } from '../lib/ai/embeddings';
+import { Database } from '../lib/db/database.types';
+
+// Load env vars manually for CLI script
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://znzgsdtspfmucxtvgcjc.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+if (!supabaseServiceKey) {
+  console.error('Error: SUPABASE_SERVICE_ROLE_KEY is required');
+  console.error('Set it in your environment or .env.local file');
+  process.exit(1);
+}
+
+const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
+
+async function embedPost(postId: string): Promise<void> {
+  // Get post content
+  const { data: post } = await supabase
+    .from('posts')
+    .select('quote_text, talk_text, usage_action, categories')
+    .eq('id', postId)
+    .single();
+
+  if (!post) return;
+
+  // Combine content for embedding
+  const contentToEmbed = `
+Quote: ${(post as any).quote_text}
+Talk: ${(post as any).talk_text}
+Action: ${(post as any).usage_action}
+Categories: ${(post as any).categories?.join(', ')}
+  `.trim();
+
+  // Generate embedding
+  const embedding = await generateEmbedding(contentToEmbed);
+
+  // Store in database
+  const { error } = await supabase
+    .from('post_embeddings')
+    .upsert({
+      post_id: postId,
+      embedding: embedding,
+      content_hash: hashContent(contentToEmbed),
+    } as any, {
+      onConflict: 'post_id'
+    });
+
+  if (error) {
+    console.error('Failed to store embedding:', error);
+    throw error;
+  }
+}
+
+function hashContent(content: string): string {
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString(16);
+}
 
 async function main() {
-  const supabase = createServerClient();
+  console.log('SUPABASE_URL:', supabaseUrl ? 'Set' : 'Not set');
+  console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Set' : 'Not set');
   
   console.log('Fetching all posts...');
   
@@ -34,10 +101,11 @@ async function main() {
     } catch (err) {
       failed++;
       process.stdout.write('x');
+      console.error('\nError:', err);
     }
     
-    // Rate limit: 20 requests per second for text-embedding-3-small
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // Rate limit for Gemini API
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
   
   console.log(`\n\nDone! Success: ${success}, Failed: ${failed}`);

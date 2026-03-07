@@ -214,7 +214,7 @@ CREATE INDEX idx_daily_feeds_user_date ON daily_feeds(user_id, date);
 CREATE TABLE post_embeddings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-  embedding VECTOR(1536) NOT NULL,
+  embedding VECTOR(3072) NOT NULL,
   content_hash TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
